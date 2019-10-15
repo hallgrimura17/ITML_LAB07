@@ -173,6 +173,7 @@ for state in mdp.states:
     maxQ = -1000000
     for action in mdp.actions(state):
         q = computeQ(state, action , mdp, v)
+        pi[state] += q
 
 
 
