@@ -15,7 +15,7 @@
    2. (b) _(30 points)_ \
     Implement your model of the problem by filling out the relevant functions in BlackjackMDP in lab7.py. Test your model by generating some simulations of random game play and checking whether the resulting states make sense. How many reachable states does your model have?
 
-        ...
+        552 states.
 
 2. Value Iteration (Total points: 50)
    1. (a) _(25 points)_ \
@@ -26,12 +26,13 @@
    2. (b) _(10 points)_ \
     What is the expected outcome of playing Blackjack with the optimal policy? Who will win the the long run, the player or the dealer? Why?
 
-        ...
+        The dealer, \<explanation\>.
 
    3. (c) _(15 points)_ \
     Visualize the resulting value function and policy. For example, you could use a table similar to the one on Wikipedia, depending on your choice of state space. 
 
-        ...
+        ![Reward](./Images/Figure_1.png)
+        ![Policy](./Images/Figure_2.png)
 
    4. (d) _(5 bonus points)_ \
     Suppose the player had an additional action ”Double down”. Upon ”Double down” the player will get exactly one more card and end his turn. He will also double his initial bet, that is, win or loose double the normal amount. Show how having this additional action changes the optimal policy and expected outcome of the game.
@@ -41,4 +42,5 @@
    5. (e) _(10 bonus points)_ \
     Playing with an infinite deck of cards is somewhat unrealistic. How does the value of the game change, if we assume to only play with one deck of cards (52 cards)? How many different states do you need to consider in this case?
 
-        ...
+        We would need 10 additional variables one to keep track of the remainder of each card class (i.e. ace, 2, 3, ... , 9, 10+). giving us an additional 5^9 + 17^1 = 33,203,125 possibilities
+        9 *  + 17^1 = 33,203,125
