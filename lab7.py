@@ -1,5 +1,10 @@
 import random
 
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 ls = (10,10,10,10,2,3,4,5,6,7,8,9,11)
 phase = ['init', 'player', 'dealer', 'terminal']
 def calcProb(x):
@@ -45,7 +50,7 @@ class MDP:
                         self.states.add(newState)
                         queue.append(newState)
         print('%d reachable states' % len(self.states))
-        # print self.states
+        # print(self.states)
         
 class BlackjackMDP(MDP):
 
@@ -107,7 +112,7 @@ class BlackjackMDP(MDP):
                         phv -= 10
                         playerUsableAce = False
                     if phv > 21:
-                        nextstate = ('terminal', 0, False, 0, False)
+                        nextstate = ('terminal', phv, playerUsableAce, state[3], state[4])
                         reward = -1
                     else:
                         nextstate = ('dealer',phv,playerUsableAce,state[3],state[4])
@@ -135,7 +140,7 @@ class BlackjackMDP(MDP):
                         dhv -= 10
                         dealerUsableAce = False
                     if dhv > 21:
-                        nextstate = ('terminal', 0, False, 0, False)
+                        nextstate = ('terminal',state[1],state[2],dhv, dealerUsableAce)
                         reward = 1
                     else:
                         nextstate = ('player',state[1],state[2],dhv, dealerUsableAce)
@@ -151,31 +156,63 @@ def computeQ(state, action ,mdp, v):
 mdp = BlackjackMDP()
 v = {}
 for state in mdp.states:
-     v[state] = 0
+    v[state] = 0
 
 delta_bound = 0.0001
-iteration = 0
+i = 0
 converged = False
 while not converged:
     delta = 0
     for state in mdp.states:
         qmax = -1000000
         for action in mdp.actions(state):
-            qmax = max(qmax, computeQ(state, action, mdp, v))
+            if action == 'terminal':
+                qmax  = 0
+            else:
+                qmax = max(qmax, computeQ(state, action, mdp, v))
         delta = max(delta, abs(v[state] - qmax))
         v[state] = qmax
-    iteration += 1
-    print("iteration: ", iteration, " delta: ", delta)
-    converged = (delta < 0.0000001)
+    i += 1
+    print("iteration: ", i, " delta: ", delta)
+    converged = (delta < delta_bound)
 
 pi = {}
+
 for state in mdp.states:
-    maxQ = -1000000
+    qmax = -1000000
     for action in mdp.actions(state):
-        q = computeQ(state, action , mdp, v)
+        if action == 'terminal':
+            q = 0
+        else: 
+            q = computeQ(state, action , mdp, v)
+        if q > qmax:
+            pi[state] = (q, action)
+            qmax = q
 
 
+# for i in pi:
+#     print(pi[i])
 
+# sorted_by_second = sorted(mdp.states, key=lambda state: state[1])
+# for i in mdp.states:
+#     print(i, "\t", v[i])
+d = [[0]*21]*21
+# dd = np.ndarray(shape=(21,21), dtype=float, order='F')
+dd = np.full(shape=(22,22), fill_value=0.0, dtype=float, order='F')
+for state in pi:
+    # print(state, "\t", v[state], "\t", pi[state])
+    # dd[state[3]][state[1]] = v[state]
+    dd[state[3]][state[1]] = pi[state][0]
+
+sns.heatmap(data=dd, annot=True, cbar=False)
+# plt.xlim(1.5, 11.5)
+# plt.ylim(3.5, 21.5)
+plt.ylim(-0.5, 22.5)
+# plt.xticks(list(range(2,12)))
+# plt.yticks(list(range(4,22)))
+plt.xlabel("Player hand value")
+plt.ylabel("Dealer hand value")
+plt.show()
 """
 for each state we need to have the hand value of the player and dealer, if either of them have a usable ace, the actions are only from the view of the player which are hit or stand or wait, which is not the same as doing nothing. successor states for the player either involve the dealers turn with addition to dragging more cards or a terminal state. the successor states of a dealer 
 """
