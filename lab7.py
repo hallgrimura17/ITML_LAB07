@@ -6,7 +6,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 ls = (10,10,10,10,2,3,4,5,6,7,8,9,11)
-phase = ['init', 'player', 'dealer', 'terminal']
 def calcProb(x):
     if x == 10:
         return 4/13
@@ -67,8 +66,7 @@ class BlackjackMDP(MDP):
             return ['Hit', 'Stand']
         elif state[0] == 'init' or state[0] == 'dealer':
             return ['Noop']
-        else:
-            return []
+        return []
 
     # Return a list of (newState, prob, reward) tuples corresponding to edges
     # coming out of |state|.
@@ -79,6 +77,7 @@ class BlackjackMDP(MDP):
         results = []
         states = set()
         nextstate = ()
+
         if state[0] == 'init':
             for x in ls:
                 for y in ls:
@@ -94,14 +93,14 @@ class BlackjackMDP(MDP):
                         prob3 = calcProb(z)
                         nextstate = ('player', playerValue, playerUsableAce, dealerValue, dealerUsableAce)
                         results.append((nextstate, prob1*prob2*prob3, 0))
-        elif state[0] == 'player':
+        if state[0] == 'player':
             if action == 'Stand':
                 nextstate = ('dealer',) + state[1:]
                 p = 1.0
-                reward = 0
-                return [(nextstate,p,reward)]
-            if action == 'Hit':
-                reward = 0
+                reward = 0.0
+                results.append((nextstate,p,reward))
+            elif action == 'Hit':
+                reward = 0.0
                 playerUsableAce = state[2]
                 for x in ls:
                     phv = x + state[1]
@@ -114,28 +113,26 @@ class BlackjackMDP(MDP):
                         playerUsableAce = False
                     if phv > 21:
                         nextstate = ('terminal', 0, False, 0, False)
-                        reward = -1
+                        reward = -1.0
                     else:
-                        nextstate = ('dealer',phv,playerUsableAce,state[3],state[4])
+                        nextstate = ('player', phv, playerUsableAce, state[3], state[4])
                     results.append((nextstate,p,reward))
-                    # states.add(nextstate)
-                # print(len(states))
         elif state[0] == 'dealer':
             if state[3] > 16:
-                nextstate = ('terminal',0, False, 0, False)
+                nextstate = ('terminal', 0, False, 0, False)
                 p = 1.0
-                reward = 0
+                reward = 0.0
                 if state[1] > state[3]:
-                    reward = 1
+                    reward = 1.0
                 elif state[1] < state[3]:
-                    reward = -1
-                return [(nextstate,p,reward)]
-            if state[3] <= 16:
+                    reward = -1.0
+                results.append((nextstate,p,reward))
+            elif state[3] < 17:
                 dealerUsableAce = state[4]
-                reward = 0
+                reward = 0.0
                 for x in ls:
                     p = calcProb(x)
-                    dhv = x + state[1]
+                    dhv = x + state[3]
                     if dhv > 21 and state[2]:
                         dhv -= 10
                         playerUsableAce = x == 11
@@ -143,13 +140,11 @@ class BlackjackMDP(MDP):
                         dhv -= 10
                         dealerUsableAce = False
                     if dhv > 21:
+                        reward = 1.0
                         nextstate = ('terminal', 0, False, 0, False)
-                        reward = 1
                     else:
-                        nextstate = ('player',state[1],state[2],dhv, dealerUsableAce)
+                        nextstate = ('dealer', state[1], state[2], dhv, dealerUsableAce)
                     results.append((nextstate,p,reward))
-        elif state == 'terminal' or action == 'Noop':
-            result = [state,1.0,0]
         return results
 
 
@@ -176,16 +171,19 @@ while not converged:
         for action in mdp.actions(state):
             q = computeQ(state, action , mdp, v)
             if q > qmax:
+                if action == 'player':
+                    pi[state] = action
                 qmax = q
         if state[0] == 'terminal':
             qmax = 0
+            print(state, action)
         delta = max(delta, abs(v[state] - qmax))
         v[state] = qmax
-        if action == 'player':
-            pi[state] = action
+
     i += 1
     print("iteration: ", i, " delta: ", delta)
     converged = (delta < delta_bound)
+
 
 # for i in pi:
 #     print(pi[i])
@@ -200,20 +198,20 @@ for state in v:
     # print(state, "\t", v[state], "\t", pi[state])
     # dd[state[3]][state[1]] = v[state]
     dd[state[3] - 1][state[1] - 1] = v[state]
-sns.heatmap(data=d, annot=True, cbar=False)
+# sns.heatmap(data=dd, annot=True, cbar=False)
 # plt.xlim(1.5, 11.5)
 # plt.ylim(3.5, 21.5)
 # plt.ylim(-0.5, 22.5)
 # plt.xticks(list(range(2,12)))
 # plt.yticks(list(range(4,22)))
 
-plt.xlabel("Player hand value")
-plt.ylabel("Dealer hand value")
-plt.show()
+# plt.xlabel("Player hand value")
+# plt.ylabel("Dealer hand value")
+# plt.show()
 for x in dd:
     for y in x:
-        print(y, end=' ')
+        print(format(y, '.2f'), end=' ')
     print() 
 """
-for each state we need to have the hand value of the player and dealer, if either of them have a usable ace, the actions are only from the view of the player which are hit or stand or wait, which is not the same as doing nothing. successor states for the player either involve the dealers turn with addition to dragging more cards or a terminal state. the successor states of a dealer 
+for each state we need to have the hand value of the player and dealer, if either of them have a usable ace, the actions are only from the view of the player which are hit or stand or wait, which is not the same as doing nothing. successor states for the player either involve the dealers turn with addition to dragging more cards or a terminal state. the successor state depends on whether the player or dealer hit or stand, if the player hits he increases his hand gets to do again, same for the dealer, but the both risk busting, going straight to the terminal state. Rewards are 1 if player wins and -1 if dealer wins, 0 if its a draw. The reward is only decided when the game transitions to a terminal state. transitional probabilities are the same as the chance of drawing each card 4/13 for ten and 1/13 for any other card than ten, but multiple states can be reached, so the probability is summed up for every state.
 """
