@@ -91,14 +91,14 @@ class BlackjackMDP(MDP):
                         prob1 = calcProb(x)
                         prob2 = calcProb(y)
                         prob3 = calcProb(z)
-                        nextstate = ('player',playerValue,playerUsableAce,dealerValue,dealerUsableAce)
+                        nextstate = ('player', playerValue, playerUsableAce, dealerValue, dealerUsableAce)
                         results.append((nextstate, prob1*prob2*prob3, 0))
         elif state[0] == 'player':
             if action == 'Stand':
                 nextstate = ('dealer',) + state[1:]
                 p = 1.0
                 reward = 0
-                return [(nextstate,p,reward)]
+                return [(nextstate, p, reward)]
             if action == 'Hit':
                 reward = 0
                 playerUsableAce = state[2]
@@ -112,14 +112,16 @@ class BlackjackMDP(MDP):
                         phv -= 10
                         playerUsableAce = False
                     if phv > 21:
-                        nextstate = ('terminal', phv, playerUsableAce, state[3], state[4])
+                        # nextstate = ('terminal', phv, playerUsableAce, state[3], state[4])
+                        nextstate = ('terminal', 0, False, 0, False)
                         reward = -1
                     else:
-                        nextstate = ('dealer',phv,playerUsableAce,state[3],state[4])
-                    results.append((nextstate,p,reward))
+                        nextstate = ('dealer', phv, playerUsableAce, state[3], state[4])
+                    results.append((nextstate, p, reward))
         elif state[0] == 'dealer':
             if state[3] > 16:
-                nextstate = ('terminal',) + state[1:]
+                # nextstate = ('terminal',) + state[1:]
+                nextstate = ('terminal', 0, False, 0, False)
                 p = 1.0
                 reward = 0
                 if state[1] > state[3]:
@@ -140,10 +142,11 @@ class BlackjackMDP(MDP):
                         dhv -= 10
                         dealerUsableAce = False
                     if dhv > 21:
-                        nextstate = ('terminal',state[1],state[2],dhv, dealerUsableAce)
+                        # nextstate = ('terminal', state[1], state[2], dhv, dealerUsableAce)
+                        nextstate = ('terminal', 0, False, 0 , False)
                         reward = 1
                     else:
-                        nextstate = ('player',state[1],state[2],dhv, dealerUsableAce)
+                        nextstate = ('player', state[1], state[2], dhv, dealerUsableAce)
                     results.append((nextstate,p,reward))     
         return results
         
@@ -164,12 +167,13 @@ converged = False
 while not converged:
     delta = 0
     for state in mdp.states:
-        qmax = -1000000
+        qmax = -100000
         for action in mdp.actions(state):
-            if action == 'terminal':
-                qmax  = 0
-            else:
-                qmax = max(qmax, computeQ(state, action, mdp, v))
+            qmax = max(qmax, computeQ(state, action, mdp, v))
+            # if action == 'Noop':
+            #     qmax  = 0
+            # else:
+            #     qmax = max(qmax, computeQ(state, action, mdp, v))
         delta = max(delta, abs(v[state] - qmax))
         v[state] = qmax
     i += 1
@@ -177,14 +181,14 @@ while not converged:
     converged = (delta < delta_bound)
 
 pi = {}
-
 for state in mdp.states:
-    qmax = -1000000
+    qmax = -100000
     for action in mdp.actions(state):
-        if action == 'terminal':
-            q = 0
-        else: 
-            q = computeQ(state, action , mdp, v)
+        q = computeQ(state, action , mdp, v)
+        # if action == 'Noop':
+        #     q = 0
+        # else: 
+        #     q = computeQ(state, action , mdp, v)
         if q > qmax:
             pi[state] = (q, action)
             qmax = q
@@ -212,6 +216,24 @@ plt.ylim(-0.5, 22.5)
 # plt.yticks(list(range(4,22)))
 plt.xlabel("Player hand value")
 plt.ylabel("Dealer hand value")
+plt.title("Policy")
+plt.show()
+
+
+
+dd = np.full(shape=(22,22), fill_value=0.0, dtype=float, order='F')
+for state in v:
+    dd[state[3]][state[1]] = v[state]
+
+sns.heatmap(data=dd, annot=True, cbar=False, cmap="Blues")
+# plt.xlim(1.5, 11.5)
+# plt.ylim(3.5, 21.5)
+plt.ylim(-0.5, 22.5)
+# plt.xticks(list(range(2,12)))
+# plt.yticks(list(range(4,22)))
+plt.xlabel("Player hand value")
+plt.ylabel("Dealer hand value")
+plt.title("Reward")
 plt.show()
 """
 for each state we need to have the hand value of the player and dealer, if either of them have a usable ace, the actions are only from the view of the player which are hit or stand or wait, which is not the same as doing nothing. successor states for the player either involve the dealers turn with addition to dragging more cards or a terminal state. the successor states of a dealer 
