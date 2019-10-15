@@ -10,12 +10,13 @@
    1. (a) _(20 points)_ \
     How would you describe a state of the problem? What are the possible actions, successor states, rewards and transition probabilities? Try to reduce the state space as much as possible (combine states whose values and best action do not differ), but make sure to keep the Markov property.
 
-        ...
+        for each state we need to have the hand value of the player and dealer, if either of them have a usable ace, the actions are only from the view of the player which are hit or stand or wait, which is not the same as doing nothing. successor states for the player either involve the dealers turn with addition to dragging more cards or a terminal state. the successor state depends on whether the player or dealer hit or stand, if the player hits he increases his hand gets to do again, same for the dealer, but the both risk busting, going straight to the terminal state. Rewards are 1 if player wins and -1 if dealer wins, 0 if its a draw. The reward is only decided when the game transitions to a terminal state. transitional probabilities are the same as the chance of drawing each card 4/13 for ten and 1/13 for any other card than ten, but multiple states can be reached, so the probability is summed up for every state.
+
 
    2. (b) _(30 points)_ \
     Implement your model of the problem by filling out the relevant functions in BlackjackMDP in lab7.py. Test your model by generating some simulations of random game play and checking whether the resulting states make sense. How many reachable states does your model have?
 
-        552 states.
+        1132 states.
 
 2. Value Iteration (Total points: 50)
    1. (a) _(25 points)_ \
@@ -26,7 +27,8 @@
    2. (b) _(10 points)_ \
     What is the expected outcome of playing Blackjack with the optimal policy? Who will win the the long run, the player or the dealer? Why?
 
-        The dealer, \<explanation\>.
+        The expected outcome of playing blackjack with the optimal policy   is to lose money. The dealer, the player is the first to go, there is a high chance that the player loses right away by hitting where dealer loses automatically, so the player to go first always has the disadvantage, also that the player cant see the other card of the dealer meaning that he'll think the dealer has a good hand while he might not, resulting in the player hitting more. Even though there is a rules that dealer cannot hit when they are above 16. this helps the player since he will automatically win if the dealer has higher than 16 and the player has higher than the dealer, the best action for the dealer is to hit since he'll lose anyway but he wont and the player wins. Given that this rule is in place the dealer has the advantage.
+        The higher the starting hand of the dealer the less chance the player has to win
 
    3. (c) _(15 points)_ \
     Visualize the resulting value function and policy. For example, you could use a table similar to the one on Wikipedia, depending on your choice of state space. 

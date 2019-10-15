@@ -6,7 +6,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 ls = (10,10,10,10,2,3,4,5,6,7,8,9,11)
-phase = ['init', 'player', 'dealer', 'terminal']
 def calcProb(x):
     if x == 10:
         return 4/13
@@ -172,14 +171,15 @@ while not converged:
         for action in mdp.actions(state):
             q = computeQ(state, action , mdp, v)
             if q > qmax:
+                if action == 'player':
+                    pi[state] = action
                 qmax = q
         if state[0] == 'terminal':
             qmax = 0
             print(state, action)
         delta = max(delta, abs(v[state] - qmax))
         v[state] = qmax
-        if action == 'player':
-            pi[state] = action
+
     i += 1
     print("iteration: ", i, " delta: ", delta)
     converged = (delta < delta_bound)
