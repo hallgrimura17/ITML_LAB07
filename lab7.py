@@ -114,7 +114,7 @@ class BlackjackMDP(MDP):
                     results.append((nextstate,p,reward))
         elif state[0] == 'dealer':
             if state[3] > 16:
-                nextstate = ('terminal',) + state[1:]
+                nextstate = ('terminal',0, False, 0, False)
                 p = 1.0
                 reward = 0
                 if state[1] > state[3]:
@@ -173,7 +173,8 @@ for state in mdp.states:
     maxQ = -1000000
     for action in mdp.actions(state):
         q = computeQ(state, action , mdp, v)
-        pi[state] += q
+
+        pi[state] = action
 
 
 
