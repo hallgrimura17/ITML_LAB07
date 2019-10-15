@@ -169,12 +169,15 @@ while not converged:
     for state in mdp.states:
         qmax = -100000
         for action in mdp.actions(state):
-            qmax = max(qmax, computeQ(state, action, mdp, v))
+            # qmax = max(qmax, computeQ(state, action, mdp, v))
             # if action == 'Noop':
-            #     qmax  = 0
-            # else:
-            #     qmax = max(qmax, computeQ(state, action, mdp, v))
-        delta = max(delta, abs(v[state] - qmax))
+            if state[0] == 'terminal':
+                qmax  = 0
+                print("no reward")
+            else:
+                qcalc = computeQ(state, action, mdp, v)
+                qmax = qmax if qmax > qcalc else qcalc
+        delta = delta if delta > abs(v[state] - qmax) else abs(v[state] - qmax)
         v[state] = qmax
     i += 1
     print("iteration: ", i, " delta: ", delta)
@@ -184,28 +187,20 @@ pi = {}
 for state in mdp.states:
     qmax = -100000
     for action in mdp.actions(state):
-        q = computeQ(state, action , mdp, v)
+        # q = computeQ(state, action , mdp, v)
         # if action == 'Noop':
-        #     q = 0
-        # else: 
-        #     q = computeQ(state, action , mdp, v)
-        if q > qmax:
-            pi[state] = (q, action)
-            qmax = q
+        if state[0] == 'terminal':
+            qcalc = 0
+            print("no reward")
+        else: 
+            qcalc = computeQ(state, action , mdp, v)
+        if qcalc > qmax:
+            pi[state] = (qcalc, action)
+            qmax = qcalc
 
-
-# for i in pi:
-#     print(pi[i])
-
-# sorted_by_second = sorted(mdp.states, key=lambda state: state[1])
-# for i in mdp.states:
-#     print(i, "\t", v[i])
-d = [[0]*21]*21
-# dd = np.ndarray(shape=(21,21), dtype=float, order='F')
-dd = np.full(shape=(22,22), fill_value=0.0, dtype=float, order='F')
+# dd = np.full(shape=(22,22), fill_value=0.0, dtype=float, order='F')
+dd = np.zeros((22, 22))
 for state in pi:
-    # print(state, "\t", v[state], "\t", pi[state])
-    # dd[state[3]][state[1]] = v[state]
     dd[state[3]][state[1]] = pi[state][0]
 
 sns.heatmap(data=dd, annot=True, cbar=False)
@@ -220,8 +215,8 @@ plt.title("Policy")
 plt.show()
 
 
-
-dd = np.full(shape=(22,22), fill_value=0.0, dtype=float, order='F')
+# dd = np.full(shape=(22,22), fill_value=0.0, dtype=float, order='F')
+dd = np.zeros((22, 22))
 for state in v:
     dd[state[3]][state[1]] = v[state]
 
@@ -235,6 +230,7 @@ plt.xlabel("Player hand value")
 plt.ylabel("Dealer hand value")
 plt.title("Reward")
 plt.show()
+
 """
 for each state we need to have the hand value of the player and dealer, if either of them have a usable ace, the actions are only from the view of the player which are hit or stand or wait, which is not the same as doing nothing. successor states for the player either involve the dealers turn with addition to dragging more cards or a terminal state. the successor states of a dealer 
 """
