@@ -1,5 +1,10 @@
 import random
 
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 ls = (10,10,10,10,2,3,4,5,6,7,8,9,11)
 phase = ['init', 'player', 'dealer', 'terminal']
 def calcProb(x):
@@ -45,7 +50,7 @@ class MDP:
                         self.states.add(newState)
                         queue.append(newState)
         print('%d reachable states' % len(self.states))
-        # print self.states
+        # print(self.states)
         
 class BlackjackMDP(MDP):
 
@@ -72,6 +77,7 @@ class BlackjackMDP(MDP):
     # If state is a terminal state, return the empty list.
     def succAndProbReward(self, state, action):
         results = []
+        states = set()
         nextstate = ()
         if state[0] == 'init':
             for x in ls:
@@ -86,7 +92,7 @@ class BlackjackMDP(MDP):
                         prob1 = calcProb(x)
                         prob2 = calcProb(y)
                         prob3 = calcProb(z)
-                        nextstate = ('player',playerValue,playerUsableAce,dealerValue,dealerUsableAce)
+                        nextstate = ('player', playerValue, playerUsableAce, dealerValue, dealerUsableAce)
                         results.append((nextstate, prob1*prob2*prob3, 0))
         elif state[0] == 'player':
             if action == 'Stand':
@@ -112,6 +118,8 @@ class BlackjackMDP(MDP):
                     else:
                         nextstate = ('dealer',phv,playerUsableAce,state[3],state[4])
                     results.append((nextstate,p,reward))
+                    # states.add(nextstate)
+                # print(len(states))
         elif state[0] == 'dealer':
             if state[3] > 16:
                 nextstate = ('terminal',0, False, 0, False)
@@ -139,8 +147,16 @@ class BlackjackMDP(MDP):
                         reward = 1
                     else:
                         nextstate = ('player',state[1],state[2],dhv, dealerUsableAce)
-                    results.append((nextstate,p,reward))     
+                    results.append((nextstate,p,reward))
+        elif state == 'terminal' or action == 'Noop':
+            result = [state,1.0,0]
         return results
+
+
+mdp = BlackjackMDP()
+v = {}
+for state in mdp.states:
+    v[state] = 0
         
 def computeQ(state, action ,mdp, v):
     lis = []
@@ -148,36 +164,56 @@ def computeQ(state, action ,mdp, v):
         lis.append(x[1] * (x[2] + mdp.discountFactor * v[x[0]]))
     return max(lis)
 
-mdp = BlackjackMDP()
-v = {}
-for state in mdp.states:
-     v[state] = 0
 
-delta_bound = 0.0001
-iteration = 0
+delta_bound = 0.000001
+i = 0
+pi = {}
 converged = False
 while not converged:
     delta = 0
     for state in mdp.states:
-        qmax = -1000000
+        qmax = -1000000.0
         for action in mdp.actions(state):
-            qmax = max(qmax, computeQ(state, action, mdp, v))
+            q = computeQ(state, action , mdp, v)
+            if q > qmax:
+                qmax = q
+        if state[0] == 'terminal':
+            qmax = 0
         delta = max(delta, abs(v[state] - qmax))
         v[state] = qmax
-    iteration += 1
-    print("iteration: ", iteration, " delta: ", delta)
-    converged = (delta < 0.0000001)
+        if action == 'player':
+            pi[state] = action
+    i += 1
+    print("iteration: ", i, " delta: ", delta)
+    converged = (delta < delta_bound)
 
-pi = {}
-for state in mdp.states:
-    maxQ = -1000000
-    for action in mdp.actions(state):
-        q = computeQ(state, action , mdp, v)
+# for i in pi:
+#     print(pi[i])
 
-        pi[state] = action
+# sorted_by_second = sorted(mdp.states, key=lambda state: state[1])
+# for i in mdp.states:
+#     print(i, "\t", v[i])
+d = [[0]*21]*21
+# dd = np.ndarray(shape=(21,21), dtype=float, order='F')
+dd = np.full(shape=(22,22), fill_value=0.0, dtype=float, order='F')
+for state in v:
+    # print(state, "\t", v[state], "\t", pi[state])
+    # dd[state[3]][state[1]] = v[state]
+    dd[state[3] - 1][state[1] - 1] = v[state]
+sns.heatmap(data=d, annot=True, cbar=False)
+# plt.xlim(1.5, 11.5)
+# plt.ylim(3.5, 21.5)
+# plt.ylim(-0.5, 22.5)
+# plt.xticks(list(range(2,12)))
+# plt.yticks(list(range(4,22)))
 
-
-
+plt.xlabel("Player hand value")
+plt.ylabel("Dealer hand value")
+plt.show()
+for x in dd:
+    for y in x:
+        print(y, end=' ')
+    print() 
 """
 for each state we need to have the hand value of the player and dealer, if either of them have a usable ace, the actions are only from the view of the player which are hit or stand or wait, which is not the same as doing nothing. successor states for the player either involve the dealers turn with addition to dragging more cards or a terminal state. the successor states of a dealer 
 """
