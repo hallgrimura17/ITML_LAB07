@@ -184,34 +184,33 @@ while not converged:
     print("iteration: ", i, " delta: ", delta)
     converged = (delta < delta_bound)
 
+dd = np.zeros((22,22))
+for state in pi:
+    dd[state[3]][state[1]] = pi[state][0]
 
-# for i in pi:
-#     print(pi[i])
 
-# sorted_by_second = sorted(mdp.states, key=lambda state: state[1])
-# for i in mdp.states:
-#     print(i, "\t", v[i])
-d = [[0]*21]*21
-# dd = np.ndarray(shape=(21,21), dtype=float, order='F')
-dd = np.full(shape=(22,22), fill_value=0.0, dtype=float, order='F')
-for state in v:
-    # print(state, "\t", v[state], "\t", pi[state])
-    # dd[state[3]][state[1]] = v[state]
-    dd[state[3] - 1][state[1] - 1] = v[state]
-# sns.heatmap(data=dd, annot=True, cbar=False)
+sns.heatmap(data=dd, annot=True, cbar=False)
 # plt.xlim(1.5, 11.5)
 # plt.ylim(3.5, 21.5)
-# plt.ylim(-0.5, 22.5)
-# plt.xticks(list(range(2,12)))
-# plt.yticks(list(range(4,22)))
+plt.ylim(-0.5, 22.5)
+# plt.xticks(ticks=list(range(18)), labels=list(range(4,22)))
+# plt.yticks(ticks=list(range(10)), labels=list(range(2,12)))
+plt.xlabel("Player hand value")
+plt.ylabel("Dealer hand value")
+plt.title("Policy")
+plt.show()
 
-# plt.xlabel("Player hand value")
-# plt.ylabel("Dealer hand value")
-# plt.show()
-for x in dd:
-    for y in x:
-        print(format(y, '.2f'), end=' ')
-    print() 
-"""
-for each state we need to have the hand value of the player and dealer, if either of them have a usable ace, the actions are only from the view of the player which are hit or stand or wait, which is not the same as doing nothing. successor states for the player either involve the dealers turn with addition to dragging more cards or a terminal state. the successor state depends on whether the player or dealer hit or stand, if the player hits he increases his hand gets to do again, same for the dealer, but the both risk busting, going straight to the terminal state. Rewards are 1 if player wins and -1 if dealer wins, 0 if its a draw. The reward is only decided when the game transitions to a terminal state. transitional probabilities are the same as the chance of drawing each card 4/13 for ten and 1/13 for any other card than ten, but multiple states can be reached, so the probability is summed up for every state.
-"""
+dd = np.zeros((22,22))
+for state in v:
+    dd[state[3]][state[1]] = v[state]
+
+sns.heatmap(data=dd, annot=True, cbar=False, cmap="Blues")
+# plt.xlim(1.5, 11.5)
+# plt.ylim(3.5, 21.5)
+plt.ylim(-0.5, 22.5)
+# plt.xticks(ticks=list(range(18)), labels=list(range(4,22)))
+# plt.yticks(ticks=list(range(10)), labels=list(range(2,12)))
+plt.xlabel("Player hand value")
+plt.ylabel("Dealer hand value")
+plt.title("Reward")
+plt.show()
